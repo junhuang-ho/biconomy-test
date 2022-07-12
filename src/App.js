@@ -176,7 +176,7 @@ function App()
             [
                 [
                     201, // operation type, sf specific
-                    MUMBAI_SF_HOST_ADDRESS,
+                    MUMBAI_CFAV1_ADDRESS,
                     callData,
                 ],
             ]
@@ -212,7 +212,7 @@ function App()
             [
                 [
                     201, // operation type, sf specific
-                    MUMBAI_SF_HOST_ADDRESS,
+                    MUMBAI_CFAV1_ADDRESS,
                     callData,
                 ],
             ]
