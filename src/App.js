@@ -358,7 +358,7 @@ function App()
         // console.log(estimatedGasForwardCall)
 
         const token = ethers.constants.AddressZero // is only used if you want to collect gas fees in an ERC20
-        const txGas = "3000000000000000" // is how much gas (in wei) you're going to forward to the Host contract
+        const txGas = "9000000000000000" // is how much gas (in wei) you're going to forward to the Host contract
         const tokenGasPrice = "0" // is only used if you want to collect fees in an ERC20
         const batchId = "0" // can be always zero
         const batchNonce = (await biconomyForwarderContract.getNonce(selectedAddress, batchId)).toString()
@@ -414,7 +414,7 @@ function App()
 
         const txParams = {
             data: biconomyForwarderData,
-            to: MUMBAI_SF_HOST_ADDRESS,
+            to: MUMBAI_BICONOMY_FORWARDER_ADDRESS,
             from: selectedAddress,
         };
 
@@ -541,11 +541,7 @@ function App()
                     >
                         runBiconomyFlowWithSFSuggestions
                     </button>
-                    <p>after signing the transaction, I get error:</p>
-                    <p style={ { color: "red" } }>Error: no matching function (argument="sighash", value="0x8171e632", code=INVALID_ARGUMENT, version=abi/5.6.4)</p>
-                    <p>
-                        console.log(biconomyForwarderInterface.getFunction("0x8171e632")) shows that it is executePersonalSign from BiconomyForwarder contract
-                    </p>
+                    <p>after signing the transaction,</p>
                 </div>
             ) : (
                 <div>loading...</div>
