@@ -297,7 +297,7 @@ function App()
         setIsProcessing(true)
 
         const data = fn() // grant or revoke
-        const callData = callAgreement(data)
+        // const callData = callAgreement(data)
 
         // Additional setup required by SF ******
         const forwardCallData = sfInterface.encodeFunctionData("forwardBatchCall", [
@@ -305,7 +305,7 @@ function App()
                 [
                     201, // operation type, sf specific
                     MUMBAI_CFAV1_ADDRESS,
-                    callData,
+                    data, //callData,
                 ],
             ]
         ])
@@ -367,7 +367,7 @@ function App()
         const minutesFromNow = 20
         const deadline = (now + (minutesFromNow * 60)).toString()
 
-        const hashedData = await hasherContract.hashWithKeccak256(forwardCallData)
+        // const hashedData = await hasherContract.hashWithKeccak256(forwardCallData)
 
         const hash = await hasherContract.getMessageHash(
             selectedAddress,
