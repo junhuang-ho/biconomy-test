@@ -318,8 +318,6 @@ function App()
             signer,
         )
 
-        console.log("check fn sig", biconomyForwarderInterface.getFunction("0x8171e632"))
-
         const hasherContract = new ethers.Contract(
             MUMBAI_HASHER_ADDRESS,
             MUMBAI_HASHER_ABI,
@@ -533,12 +531,21 @@ function App()
                     <p>3. In the ERC20ForwardRequest params, what is the best values for `txGas`, `tokenGasPrice`, `batchId`, `batchNonce` and `deadline`? Are these params normally done for us on the Biconomy side of things? How do I set them?</p>
                     <p>Also, I am still confused on the proper workflow for everything here, general explanations/tutorials/guides would help</p>
 
+                    <p>---------------------------------</p>
+                    <p>testing SF suggestions, click:</p>
                     <button
                         onClick={ async () =>
                         {
                             await runBiconomyFlowWithSFSuggestions(grantPermission)
                         } }
-                    >runBiconomyFlowWithSFSuggestions</button>
+                    >
+                        runBiconomyFlowWithSFSuggestions
+                    </button>
+                    <p>after signing the transaction, I get error:</p>
+                    <p style={ { color: "red" } }>Error: no matching function (argument="sighash", value="0x8171e632", code=INVALID_ARGUMENT, version=abi/5.6.4)</p>
+                    <p>
+                        console.log(biconomyForwarderInterface.getFunction("0x8171e632")) shows that it is executePersonalSign from BiconomyForwarder contract
+                    </p>
                 </div>
             ) : (
                 <div>loading...</div>
