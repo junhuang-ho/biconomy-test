@@ -327,7 +327,6 @@ function App()
         )
 
         // // GAS ESTIMATES
-        // console.log("YO")
         // const estimatedGasUpdateFlow = await cfav1Contract.estimateGas.updateFlowOperatorPermissions(
         //     MUMBAI_fDAIx_ADDRESS,
         //     OPERATOR_ADDRESS,
