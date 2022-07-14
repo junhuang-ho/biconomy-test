@@ -541,12 +541,18 @@ function App()
                     >
                         runBiconomyFlowWithSFSuggestions
                     </button>
-                    <p>after signing the transaction,</p>
-                </div>
+                    <p>after signing the transaction, it hits the error:</p>
+                    <p style={ { color: "red" } }>Fail with error 'Forwarded call to destination did not succeed'</p>
+                    <p>
+                        There is another issue, the `runBiconomyFlowWithSFSuggestions` method requires the user the spent gas which defeats the purpose of
+                        Biconomy meta txs. Any comments on this?
+                    </p>
+                </div >
             ) : (
                 <div>loading...</div>
-            ) }
-        </div>
+            )
+            }
+        </div >
     );
 }
 
