@@ -364,7 +364,7 @@ function App()
         const batchNonce = (await biconomyForwarderContract.getNonce(selectedAddress, batchId)).toString()
 
         const now = Math.floor(new Date().getTime() / 1000.0)
-        const minutesFromNow = 5
+        const minutesFromNow = 20
         const deadline = (now + (minutesFromNow * 60)).toString()
 
         const hashedData = await hasherContract.hashWithKeccak256(forwardCallData)
@@ -378,7 +378,7 @@ function App()
             batchId,
             batchNonce,
             deadline,
-            hashedData,
+            forwardCallData, //hashedData,
         )
         const signature = await signer.signMessage(ethers.utils.arrayify(hash))
 
@@ -392,7 +392,7 @@ function App()
                 batchId,
                 batchNonce,
                 deadline,
-                hashedData,
+                forwardCallData, //hashedData,
             ],
             signature
         ])
