@@ -416,6 +416,7 @@ function App()
             data: biconomyForwarderData,
             to: MUMBAI_BICONOMY_FORWARDER_ADDRESS,
             from: selectedAddress,
+            gasLimit: "9000000000000000",
         };
 
         // Switch provider from normal to Biconomy ******
