@@ -356,8 +356,8 @@ function App()
         };
 
         // Switch provider from normal to Biconomy ******
-        const tx = await normalProvider.send("eth_sendTransaction", [txParams])
-        normalProvider.once(tx, (transaction) =>
+        const tx = await biconomyProvider.send("eth_sendTransaction", [txParams])
+        biconomyProvider.once(tx, (transaction) =>
         { // Emitted when the transaction has been mined
             setRefresh(!refresh)
             console.log("Transaction confirmed on chain");
