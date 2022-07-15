@@ -356,8 +356,8 @@ function App()
         };
 
         // Switch provider from normal to Biconomy ******
-        const tx = await biconomyProvider.send("eth_sendTransaction", [txParams])
-        biconomyProvider.once(tx, (transaction) =>
+        const tx = await normalProvider.send("eth_sendTransaction", [txParams])
+        normalProvider.once(tx, (transaction) =>
         { // Emitted when the transaction has been mined
             setRefresh(!refresh)
             console.log("Transaction confirmed on chain");
@@ -524,6 +524,7 @@ function App()
                         Clicking "grant/revoke - biconomy", hits error code 417, message: Error while gas estimation with message cannot est…UNPREDICTABLE_GAS_LIMIT, version=providers/5.6.8).
                         its a POST error: https://api.biconomy.io/api/v2/meta-tx/native
                     </p>
+                    <p>I tried without Biconomy and the tx goes through perfectly.</p>
                     <p>For comparison the setup in the button below demos a simple contract that operations goes through Biconomy as a meta tx as expected.</p>
                     <button
                         onClick={ async () =>
