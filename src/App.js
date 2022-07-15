@@ -551,7 +551,7 @@ function App()
                         https://github.com/bcnmy/metatx-standard/blob/bc21b8a74d94506fb93f47f3259eb73efea12135/example/react-ui/src/components/Ethers_EIP2771_API.js#L226
                     </p>
                     <p>
-                        as demo by button below (also see code):
+                        as demo by button below & response in console.log (also see code):
                     </p>
                     <button
                         onClick={ () =>
