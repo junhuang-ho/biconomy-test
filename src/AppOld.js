@@ -5,9 +5,6 @@ import { ethers } from "ethers";
 import ISuperfluid from "@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json"
 import IConstantFlowAgreementV1 from "@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json"
 
-const MUMBAI_HOLY_CONTRACT_ADDRESS = "0x21D1a8baCd8FA8c32797530c4a7905cbD33FE1aD"
-const MUMBAI_HOLY_CONTRACT_ABI = [{ "inputs": [], "name": "getAddress", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "forwarder", "type": "address" }], "name": "isTrustedForwarder", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "setAddress", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "_address", "type": "address" }], "name": "setTrustedForwarder", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "trustedForwarder", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "versionRecipient", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "pure", "type": "function" }]
-
 const MUMBAI_SF_HOST_ADDRESS = "0xEB796bdb90fFA0f28255275e16936D25d3418603"
 const MUMBAI_CFAV1_ADDRESS = "0x49e565Ed1bdc17F3d220f72DF0857C26FA83F873"
 const MUMBAI_fDAIx_ADDRESS = "0x5D8B4C2554aeB7e86F387B4d6c00Ac33499Ed01f" // token
@@ -98,14 +95,13 @@ const MUMBAI_HASHER_ABI = [
     }
 ]
 
-function App()
+function AppOld()
 {
 
     const [biconomy, setBiconomy] = useState(null)
     const [selectedAddress, setSelectedAddress] = useState(null)
     const [normalProvider, setNormalProvider] = useState(null)
     const [biconomyProvider, setBiconomyProvider] = useState(null)
-    const [biconomyProvider2, setBiconomyProvider2] = useState(null)
     const [signer, setSigner] = useState(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [refresh, setRefresh] = useState(false)
@@ -115,9 +111,6 @@ function App()
     const [cfav1Interface, setCFAV1Interface] = useState(null)
     const [cfav1Contract, setCFAV1Contract] = useState(null)
     const [sfContract, setSFContract] = useState(null)
-    const [holyInterface, setHolyInterface] = useState(null)
-    const [holyContract, setHolyContract] = useState(null)
-    const [holyAddr, setHolyAddr] = useState(null)
 
     useEffect(() =>
     {
@@ -161,17 +154,7 @@ function App()
                 setSFContract(sfContract)
                 setCFAV1Contract(cfav1Contract)
 
-                const holyInterface = new ethers.utils.Interface(MUMBAI_HOLY_CONTRACT_ABI)
-                const holyContract = new ethers.Contract(
-                    MUMBAI_HOLY_CONTRACT_ADDRESS,
-                    MUMBAI_HOLY_CONTRACT_ABI,
-                    walletSigner,
-                )
-                setHolyInterface(holyInterface)
-                setHolyContract(holyContract)
-
                 setBiconomyProvider(biconomy.getEthersProvider())
-                setBiconomyProvider2(new ethers.providers.Web3Provider(biconomy))
                 setBiconomy(biconomy)
             }).onEvent(biconomy.ERROR, (error, message) =>
             {
@@ -278,6 +261,46 @@ function App()
         setIsProcessing(true)
 
         const data = fn() // grant or revoke
+        // const callData = callAgreement(data)
+
+        const abiCoder = new ethers.utils.AbiCoder()
+        const encodedData = abiCoder.encode(['bytes', 'bytes'], [data, '0x'])
+
+        // Additional setup required by SF ******
+        const forwardCallData = sfInterface.encodeFunctionData("forwardBatchCall", [
+            [
+                [
+                    201, // operation type, sf specific
+                    MUMBAI_CFAV1_ADDRESS,
+                    encodedData,
+                ],
+            ]
+        ])
+
+        const txParams = {
+            data: forwardCallData,
+            to: MUMBAI_SF_HOST_ADDRESS,
+            from: selectedAddress,
+        };
+
+        // Switch provider from normal to Biconomy ******
+        const tx = await biconomyProvider.send("eth_sendTransaction", [txParams])
+        biconomyProvider.once(tx, (transaction) =>
+        { // Emitted when the transaction has been mined
+            setRefresh(!refresh)
+            console.log("Transaction confirmed on chain");
+            console.log(transaction);
+        })
+
+        setIsProcessing(false)
+    }
+
+    const runBiconomyFlowWithSFSuggestions = async (fn) =>
+    {
+        setIsProcessing(true)
+
+        const data = fn() // grant or revoke
+        // const callData = callAgreement(data) // note: called internally if using forwardBatchCall
 
         const abiCoder = new ethers.utils.AbiCoder()
         const encodedData = abiCoder.encode(['bytes', 'bytes'], [data, '0x'])
@@ -307,6 +330,39 @@ function App()
             signer,
         )
 
+        // // GAS ESTIMATES
+        // const estimatedGasUpdateFlow = await cfav1Contract.estimateGas.updateFlowOperatorPermissions(
+        //     MUMBAI_fDAIx_ADDRESS,
+        //     OPERATOR_ADDRESS,
+        //     "4", // grants operator the delete permission (example only)
+        //     "0", // flow allowance is 0 for delete permission
+        //     [], // empty
+        // )
+        // const estimatedGasRevokeFlow = cfav1Contract.estimateGas.revokeFlowOperatorWithFullControl(
+        //     MUMBAI_fDAIx_ADDRESS,
+        //     OPERATOR_ADDRESS,
+        //     [], // empty
+        // )
+        // const estimatedGasCallAgreement = sfContract.estimateGas.callAgreement(
+        //     MUMBAI_CFAV1_ADDRESS,
+        //     data,
+        //     "0x", // userData is empty
+        // )
+        // const estimatedGasForwardCall = await sfContract.estimateGas.forwardBatchCall(
+        //     [
+        //         [
+        //             201, // operation type, sf specific
+        //             MUMBAI_SF_HOST_ADDRESS,
+        //             callData,
+        //         ],
+        //     ]
+        // )
+        // console.log("GAS ESTIMATES")
+        // console.log(estimatedGasUpdateFlow)
+        // console.log(estimatedGasRevokeFlow)
+        // console.log(estimatedGasCallAgreement)
+        // console.log(estimatedGasForwardCall)
+
         const token = ethers.constants.AddressZero // is only used if you want to collect gas fees in an ERC20
         const txGas = "9000000000000000" // is how much gas (in wei) you're going to forward to the Host contract
         const tokenGasPrice = "0" // is only used if you want to collect fees in an ERC20
@@ -314,8 +370,10 @@ function App()
         const batchNonce = (await biconomyForwarderContract.getNonce(selectedAddress, batchId)).toString()
 
         const now = Math.floor(new Date().getTime() / 1000.0)
-        const minutesFromNow = 5
+        const minutesFromNow = 20
         const deadline = (now + (minutesFromNow * 60)).toString()
+
+        // const hashedData = await hasherContract.hashWithKeccak256(forwardCallData)
 
         const hash = await hasherContract.getMessageHash(
             selectedAddress,
@@ -328,7 +386,6 @@ function App()
             deadline,
             forwardCallData, //hashedData,
         )
-
         const signature = await signer.signMessage(ethers.utils.arrayify(hash))
 
         const biconomyForwarderData = biconomyForwarderInterface.encodeFunctionData("executePersonalSign", [
@@ -346,6 +403,22 @@ function App()
             signature
         ])
 
+        // const biconomyForwarderData = biconomyForwarderInterface.encodeFunctionData("verifyPersonalSign", [
+        //     [
+        //         selectedAddress,
+        //         MUMBAI_SF_HOST_ADDRESS,
+        //         token,
+        //         txGas,
+        //         tokenGasPrice,
+        //         batchId,
+        //         batchNonce,
+        //         deadline,
+        //         hashedData,
+        //     ],
+        //     signature
+        // ])
+
+
         const txParams = {
             data: biconomyForwarderData,
             to: MUMBAI_BICONOMY_FORWARDER_ADDRESS,
@@ -353,7 +426,15 @@ function App()
         };
 
         // Switch provider from normal to Biconomy ******
-        const tx = await biconomyProvider.send("eth_sendTransaction", [txParams])
+        let tx
+        try
+        {
+            tx = await biconomyProvider.send("eth_sendTransaction", [txParams])
+        } catch (error)
+        {
+            console.error(error)
+        }
+
         biconomyProvider.once(tx, (transaction) =>
         { // Emitted when the transaction has been mined
             setRefresh(!refresh)
@@ -364,77 +445,6 @@ function App()
         setIsProcessing(false)
     }
 
-    const estimateGas = async () =>
-    {
-        const grantPermissionData = grantPermission()
-
-        const estimatedGasUpdateFlow = await biconomyProvider.estimateGas({
-            to: MUMBAI_CFAV1_ADDRESS,
-            from: selectedAddress,
-            data: grantPermissionData,
-        })
-
-        // const estimatedGasUpdateFlow = await cfav1Contract.estimateGas.updateFlowOperatorPermissions(
-        //     MUMBAI_fDAIx_ADDRESS,
-        //     OPERATOR_ADDRESS,
-        //     "4", // grants operator the delete permission (example only)
-        //     "0", // flow allowance is 0 for delete permission
-        //     [], // empty
-        // )
-
-        console.log("GAS ESTIMATES")
-        console.log(estimatedGasUpdateFlow)
-
-        // const abiCoder = new ethers.utils.AbiCoder()
-        // const encodedData = abiCoder.encode(['bytes', 'bytes'], [data, '0x'])
-
-        // // Additional setup required by SF ******
-        // const forwardCallData = sfInterface.encodeFunctionData("forwardBatchCall", [
-        //     [
-        //         [
-        //             201, // operation type, sf specific
-        //             MUMBAI_CFAV1_ADDRESS,
-        //             encodedData, //callData,
-        //         ],
-        //     ]
-        // ])
-
-        // const estimatedGasRevokeFlow = cfav1Contract.estimateGas.revokeFlowOperatorWithFullControl(
-        //     MUMBAI_fDAIx_ADDRESS,
-        //     OPERATOR_ADDRESS,
-        //     [], // empty
-        // )
-        // const estimatedGasForwardCall = await sfContract.estimateGas.forwardBatchCall(
-        //     [
-        //         [
-        //             201, // operation type, sf specific
-        //             MUMBAI_SF_HOST_ADDRESS,
-        //             callData,
-        //         ],
-        //     ]
-        // )
-
-        // console.log(estimatedGasRevokeFlow)
-        // console.log(estimatedGasForwardCall)
-    }
-
-    const setHolyAddress = async () =>
-    {
-        const data = holyInterface.encodeFunctionData("setAddress", [])
-
-        const txParams = {
-            data: data,
-            to: MUMBAI_HOLY_CONTRACT_ADDRESS,
-            from: selectedAddress,
-        };
-        const tx = await biconomyProvider.send("eth_sendTransaction", [txParams])
-        biconomyProvider.once(tx, (transaction) =>
-        { // Emitted when the transaction has been mined
-            setRefresh(!refresh)
-            console.log("Transaction confirmed on chain");
-            console.log(transaction);
-        })
-    }
 
     return (
         <div>
@@ -446,9 +456,9 @@ function App()
                         We are able to make 2 contract calls, "grant" and "revoke". Grant changes the operator permission value in the contract to 4 (which means allow to "delete"). Revoke changes the operator
                         permission value in the contract to 0 (which means not allowed to "delete"). The meaning of the operator permissions are NOT important.
                     </p>
-                    <p>The goal is to be able to call "grant" and "revoke" via Biconomy meta transactions (gasless from user perspective).</p>
+                    <p>The goal is to be able to call "grant" and "revoke" via Biconomy.</p>
                     <p>Clicking "grant/revoke - normal" buttons means sender will use their gas (ie no meta txs - so NOT using Biconomy), this works, remember to set OPERATOR_ADDRESS param in code to an address different from the sender</p>
-                    <p>[UPDATED] Clicking "grant/revoke - biconomy" buttons means going through Biconomy, tx goes through but is NOT a meta tx. User incur gas fees currently.</p>
+                    <p>Clicking "grant/revoke - biconomy" buttons means going through Biconomy, this does NOT work currently and gives the error below.</p>
                     <p>----- minimum demo ------</p>
                     <p>selected address: { selectedAddress }</p>
                     <p>operator address: { OPERATOR_ADDRESS }</p>
@@ -465,7 +475,7 @@ function App()
                     </button>
                     <p>-----------</p>
                     <br />
-                    <p>clicking any "grant" should set operator permission to 4</p>
+                    <p>clicking any "grant" should set operator permission to 4 - only working for normal</p>
                     <button
                         disabled={ isProcessing }
                         onClick={ async () =>
@@ -485,7 +495,7 @@ function App()
                     >
                         grant - biconomy
                     </button>
-                    <p>clicking any "revoke" should set operator permission to 0</p>
+                    <p>clicking any "revoke" should set operator permission to 0  - only working for normal</p>
                     <button
                         disabled={ isProcessing }
                         onClick={ async () =>
@@ -516,51 +526,34 @@ function App()
                         reset grant/revoke buttons if stuck on disabled
                     </button>
                     <p>-----------</p>
-                    <p style={ { color: "red" } }>Issue 1</p>
-                    <p style={ { color: "red" } }>
-                        Clicking "grant/revoke - biconomy", tx goes through but is NOT a meta tx. User incur gas fees currently
-                    </p>
-                    <p>For comparison the setup in the button below demos a simple contract that operations goes through Biconomy as a meta tx as expected.</p>
-                    <button
-                        onClick={ async () =>
-                        {
-                            await setHolyAddress()
-                        } }
-                    >
-                        set holy address
-                    </button>
+                    <p>The Issue: grant/revoke - biconomy buttons will get error</p>
+                    <p style={ { color: "red" } }>Error: cannot estimate gas; transaction may fail or may require manual gas limit [ See: https://links.ethers.org/v5-errors-UNPREDICTABLE_GAS_LIMIT ] (reason="execution reverted: Not trusted forwarder", method="estimateGas"</p>
                     <br />
+                    <p>SF team suggested to make the changes, see the incomplete "runBiconomyFlowWithSFSuggestions" function in code</p>
+                    <br />
+                    <p>In general, I just need to get grant/revoke permission working via Biconomy</p>
+                    <p>1. Given my error, is the SF recommendation the correct path? Is there an easier way which I do not need to interact with the Biconomy Forwarder contract directly?</p>
+                    <p>If I still have to interact with the Biconomy Forwader contract then,</p>
+                    <p>2. What is the full ABI for it? (mumbai)</p>
+                    <p>3. In the ERC20ForwardRequest params, what is the best values for `txGas`, `tokenGasPrice`, `batchId`, `batchNonce` and `deadline`? Are these params normally done for us on the Biconomy side of things? How do I set them?</p>
+                    <p>Also, I am still confused on the proper workflow for everything here, general explanations/tutorials/guides would help</p>
+
+                    <p>---------------------------------</p>
+                    <p>testing SF suggestions, click:</p>
                     <button
                         onClick={ async () =>
                         {
-                            setHolyAddr(await holyContract.getAddress())
+                            await runBiconomyFlowWithSFSuggestions(grantPermission)
                         } }
                     >
-                        get holy address
+                        runBiconomyFlowWithSFSuggestions
                     </button>
-                    <p>holy address: { holyAddr }</p>
-                    <p>-----------</p>
-                    <p style={ { color: "red" } }>Issue 2</p>
-                    <p style={ { color: "red" } }>
-                        Having trouble estimating gasLimit for `txGas` param in `executePersonalSign` function of BiconomyForwarder contract
-                    </p>
+                    <p>after signing the transaction, it hits the error:</p>
+                    <p style={ { color: "red" } }>Fail with error 'Forwarded call to destination did not succeed'</p>
                     <p>
-                        Could NOT get this suggestion to work:
+                        There is another issue, the `runBiconomyFlowWithSFSuggestions` method requires the user the spent gas which defeats the purpose of
+                        Biconomy meta txs. Any comments on this?
                     </p>
-                    <p>
-                        https://github.com/bcnmy/metatx-standard/blob/bc21b8a74d94506fb93f47f3259eb73efea12135/example/react-ui/src/components/Ethers_EIP2771_API.js#L226
-                    </p>
-                    <p>
-                        as demo by button below (also see code):
-                    </p>
-                    <button
-                        onClick={ () =>
-                        {
-                            estimateGas()
-                        } }
-                    >
-                        estimate gas
-                    </button>
                 </div >
             ) : (
                 <div>loading...</div>
@@ -570,4 +563,4 @@ function App()
     );
 }
 
-export default App;
+export default AppOld;
