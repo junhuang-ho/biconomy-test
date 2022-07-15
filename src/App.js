@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Biconomy } from "@biconomy/mexa";
 import { ethers } from "ethers";
+import sc from './sc.png'
+import apis from './apis.png'
 
 import ISuperfluid from "@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json"
 import IConstantFlowAgreementV1 from "@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json"
@@ -350,6 +352,7 @@ function App()
             data: biconomyForwarderData,
             to: MUMBAI_BICONOMY_FORWARDER_ADDRESS,
             from: selectedAddress,
+            gasLimit: "9000000000000000",
         };
 
         // Switch provider from normal to Biconomy ******
@@ -448,7 +451,7 @@ function App()
                     </p>
                     <p>The goal is to be able to call "grant" and "revoke" via Biconomy meta transactions (gasless from user perspective).</p>
                     <p>Clicking "grant/revoke - normal" buttons means sender will use their gas (ie no meta txs - so NOT using Biconomy), this works, remember to set OPERATOR_ADDRESS param in code to an address different from the sender</p>
-                    <p>[UPDATED] Clicking "grant/revoke - biconomy" buttons means going through Biconomy, tx goes through but is NOT a meta tx. User incur gas fees currently.</p>
+                    <p>[UPDATED] Clicking "grant/revoke - biconomy" buttons means going through Biconomy, but hits error - see Issue 1.</p>
                     <p>----- minimum demo ------</p>
                     <p>selected address: { selectedAddress }</p>
                     <p>operator address: { OPERATOR_ADDRESS }</p>
@@ -518,7 +521,7 @@ function App()
                     <p>-----------</p>
                     <p style={ { color: "red" } }>Issue 1</p>
                     <p style={ { color: "red" } }>
-                        Clicking "grant/revoke - biconomy", tx goes through but is NOT a meta tx. User incur gas fees currently
+                        Clicking "grant/revoke - biconomy", hits error code 417, message: Error while gas estimation with message cannot est…UNPREDICTABLE_GAS_LIMIT, version=providers/5.6.8)
                     </p>
                     <p>For comparison the setup in the button below demos a simple contract that operations goes through Biconomy as a meta tx as expected.</p>
                     <button
@@ -539,6 +542,9 @@ function App()
                         get holy address
                     </button>
                     <p>holy address: { holyAddr }</p>
+                    <p>note that I have added Biconomy Forwarder in Smart contracts and `executePersonalSign` function in API for the dashboard</p>
+                    <img src={ sc } />
+                    <img src={ apis } />
                     <p>-----------</p>
                     <p style={ { color: "red" } }>Issue 2</p>
                     <p style={ { color: "red" } }>
@@ -561,6 +567,11 @@ function App()
                     >
                         estimate gas
                     </button>
+                    {/* <p>-----------</p>
+                    <p style={ { color: "red" } }>Issue 3</p>
+                    <p style={ { color: "red" } }>
+                        For some reason empty new address with 0 matic has gas estimation issues when running holyAddress with biconomy meta txs
+                    </p> */}
                 </div >
             ) : (
                 <div>loading...</div>
