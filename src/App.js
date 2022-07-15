@@ -542,6 +542,7 @@ function App()
                         get holy address
                     </button>
                     <p>holy address: { holyAddr }</p>
+                    <p>Comparing the `holy address` vs SF for Biconomy execution, they both have similar setup (at least from my perspective), so why is the simple case working while the SF case is not?</p>
                     <p>note that I have added Biconomy Forwarder in Smart contracts and `executePersonalSign` function in API for the dashboard</p>
                     <img src={ sc } />
                     <img src={ apis } />
