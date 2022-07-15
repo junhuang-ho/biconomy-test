@@ -524,7 +524,7 @@ function App()
                         Clicking "grant/revoke - biconomy", hits error code 417, message: Error while gas estimation with message cannot est…UNPREDICTABLE_GAS_LIMIT, version=providers/5.6.8).
                         its a POST error: https://api.biconomy.io/api/v2/meta-tx/native
                     </p>
-                    <p>I tried without Biconomy and the tx goes through perfectly.</p>
+                    <p>I tried without Biconomy (using `normalProvider` - in code vs `biconomyProvider`) and the tx goes through perfectly.</p>
                     <p>For comparison the setup in the button below demos a simple contract that operations goes through Biconomy as a meta tx as expected.</p>
                     <button
                         onClick={ async () =>
