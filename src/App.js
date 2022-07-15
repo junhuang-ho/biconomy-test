@@ -299,13 +299,16 @@ function App()
         const data = fn() // grant or revoke
         // const callData = callAgreement(data)
 
+        const abiCoder = new ethers.utils.AbiCoder()
+        const encodedData = abiCoder.encode(['bytes', 'bytes'], [data, '0x'])
+
         // Additional setup required by SF ******
         const forwardCallData = sfInterface.encodeFunctionData("forwardBatchCall", [
             [
                 [
                     201, // operation type, sf specific
                     MUMBAI_CFAV1_ADDRESS,
-                    data, //callData,
+                    encodedData, //callData,
                 ],
             ]
         ])
